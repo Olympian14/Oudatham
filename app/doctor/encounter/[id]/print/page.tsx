@@ -27,10 +27,10 @@ export default async function PrintCaseSheet({ params }: { params: Promise<{ id:
     return String(val);
   };
   
-  const vitals = data.vit || {};
-  const sysReview = data.sys || {};
-  const exam = data.exam || {};
-  const demo = data.demo || { name: encounter.patient.name, age: encounter.patient.age, sex: encounter.patient.gender?.[0] };
+  const vitals: any = data.vit || {};
+  const sysReview: any = data.sysData || {};
+  const exam: any = data.exData || {};
+  const demo = data.demo || { name: encounter.patient.name, age: encounter.patient.age?.toString() || "", sex: encounter.patient.gender?.[0] || "", occ: "", addr: "" };
 
   return (
     <div className="bg-white min-h-screen text-black p-8 font-serif max-w-4xl mx-auto">
@@ -56,8 +56,8 @@ export default async function PrintCaseSheet({ params }: { params: Promise<{ id:
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div><strong>Name:</strong> {demo.name || "Unknown"}</div>
           <div><strong>Age / Sex:</strong> {demo.age || "?"}y / {demo.sex || "?"}</div>
-          <div><strong>Occupation:</strong> {getNormal(demo.occ, "Not specified")}</div>
-          <div><strong>Address:</strong> {getNormal(demo.addr, "Not specified")}</div>
+          <div><strong>Occupation:</strong> {getNormal((demo as any).occ, "Not specified")}</div>
+          <div><strong>Address:</strong> {getNormal((demo as any).addr, "Not specified")}</div>
         </div>
       </section>
 
@@ -71,7 +71,7 @@ export default async function PrintCaseSheet({ params }: { params: Promise<{ id:
           </div>
           <div>
             <strong>History of Presenting Illness (HPI):</strong>
-            <p className="whitespace-pre-wrap mt-1">{getNormal(data.hpi)}</p>
+            <p className="whitespace-pre-wrap mt-1">{getNormal((data as any).hpi)}</p>
           </div>
         </div>
       </section>
@@ -80,12 +80,12 @@ export default async function PrintCaseSheet({ params }: { params: Promise<{ id:
       <section className="mb-6">
         <h2 className="text-lg font-bold border-b border-gray-300 mb-2 uppercase tracking-wide">Background History</h2>
         <div className="grid grid-cols-2 gap-4 text-sm">
-          <div><strong>Past Medical:</strong> {getNormal(data.pmh)}</div>
-          <div><strong>Past Surgical:</strong> {getNormal(data.psh)}</div>
-          <div><strong>Family History:</strong> {getNormal(data.fh)}</div>
-          <div><strong>Personal/Diet:</strong> {getNormal(data.ph)}</div>
-          <div><strong>Drug/Allergies:</strong> {getNormal(data.dh)}</div>
-          <div><strong>Immunization:</strong> {getNormal(data.imm, "Up to date")}</div>
+          <div><strong>Past Medical:</strong> {getNormal((data as any).pmh)}</div>
+          <div><strong>Past Surgical:</strong> {getNormal((data as any).psh)}</div>
+          <div><strong>Family History:</strong> {getNormal((data as any).fh)}</div>
+          <div><strong>Personal/Diet:</strong> {getNormal((data as any).ph)}</div>
+          <div><strong>Drug/Allergies:</strong> {getNormal((data as any).dh)}</div>
+          <div><strong>Immunization:</strong> {getNormal((data as any).imm, "Up to date")}</div>
         </div>
       </section>
 
