@@ -88,6 +88,13 @@ export interface PrescriptionItem {
   instructions: string;
 }
 
+export interface InvestigationItem {
+  id: string;
+  name: string;
+  type: string; // "lab" | "radiology"
+  status: string; // "PENDING" | "COMPLETED"
+}
+
 export interface Patient {
   id: number;
   createdAt: string;
@@ -131,10 +138,14 @@ export interface Patient {
   activeExTab?: string;
   diagnosis?: string;
   prescribedInvestigations?: string;
+  labInvestigations?: InvestigationItem[];
+  radiologyInvestigations?: InvestigationItem[];
   managementPlan?: string;
   prescriptions?: PrescriptionItem[];
   inpatientPrescriptions?: PrescriptionItem[];
   isAdmitted?: boolean;
+  dischargeCourse?: string;
+  dischargeMedications?: PrescriptionItem[];
 }
 
 export interface Step {

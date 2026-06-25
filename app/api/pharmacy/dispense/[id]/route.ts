@@ -10,10 +10,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const { id } = await params;
+    const body = await req.json().catch(() => ({}));
+    const status = body.status || "DISPENSED";
 
     await prisma.prescription.update({
       where: { id },
-      data: { status: "DISPENSED" },
+      data: { status },
     });
 
     return NextResponse.json({ success: true });

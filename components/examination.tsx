@@ -161,15 +161,34 @@ export default function Examination({ patient, onUpdatePatient }: ExaminationPro
                 <div key={sec} className="space-y-3">
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">{lb}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {SYS[activeTab].ex[sec as keyof typeof SYS[typeof activeTab]["ex"]].map((item) => (
+                    {SYS[activeTab].ex[sec as keyof typeof SYS[typeof activeTab]["ex"]].map((item) => {
+                      const suggestions = IPPA_SUGGESTIONS_MAP[activeTab]?.[sec] || CUSTOM_DESCRIPTIVE_SUGGESTIONS;
+                      const currentValue = patient.exData?.[activeTab]?.[sec]?.[item] || "";
+                      return (
                       <div key={item} className="flex flex-col gap-1.5 bg-slate-50 dark:bg-slate-950/30 p-3 rounded-lg border border-slate-200 dark:border-slate-800/50">
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{item}</label>
-                        <SuggestionInput value={patient.exData?.[activeTab]?.[sec]?.[item] || ""} onChange={(val) => updateExItem(activeTab, sec, item, val)} placeholder="Normal / Abnormal findings..." suggestions={IPPA_SUGGESTIONS_MAP[activeTab]?.[sec] || CUSTOM_DESCRIPTIVE_SUGGESTIONS} className="w-full px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-xs transition" />
+                        <div className="flex flex-wrap gap-1.5 mb-1">
+                          {suggestions.map((sug) => (
+                            <button key={sug} type="button" onClick={() => {
+                              const v = currentValue ? currentValue + ", " + sug : sug;
+                              if (!currentValue.includes(sug)) updateExItem(activeTab, sec, item, v);
+                            }} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 px-2 py-1 rounded text-[10px] font-semibold transition text-left whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">
+                              + {sug}
+                            </button>
+                          ))}
+                        </div>
+                        <input 
+                          type="text" 
+                          value={currentValue} 
+                          onChange={(e) => updateExItem(activeTab, sec, item, e.target.value)} 
+                          placeholder="Normal / Abnormal findings..." 
+                          className="w-full px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-xs transition" 
+                        />
                       </div>
-                    ))}
+                    )})}
                     <div className="flex flex-col gap-1.5 bg-slate-50 dark:bg-slate-950/30 p-3 rounded-lg border border-slate-200 dark:border-slate-800/50 md:col-span-2">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Custom {lb} Notes</label>
-                      <SuggestionInput value={(patient.exData?.[activeTab]?.["custom_"] as any)?.[sec] || ""} onChange={(val) => updateExItem(activeTab, "custom_" as any, sec, val)} placeholder="Additional descriptive findings..." suggestions={CUSTOM_DESCRIPTIVE_SUGGESTIONS} className="w-full px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-xs transition" />
+                      <input type="text" value={(patient.exData?.[activeTab]?.["custom_"] as any)?.[sec] || ""} onChange={(e) => updateExItem(activeTab, "custom_" as any, sec, e.target.value)} placeholder="Additional descriptive findings..." className="w-full px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-xs transition" />
                     </div>
                   </div>
                 </div>

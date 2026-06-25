@@ -9,6 +9,7 @@ interface DiagnosisManagementProps {
   patient: Patient;
   onUpdatePatient: (updated: Patient) => void;
   encounterId: string;
+  onComplete?: () => void;
 }
 
 const SMART_DRUGS = [
@@ -45,7 +46,7 @@ const DOSAGES = ["5mg", "10mg", "20mg", "40mg", "50mg", "250mg", "500mg", "1g"];
 const FREQUENCIES = ["OD (Once daily)", "BD (Twice daily)", "TDS (Thrice daily)", "QID (Four times a day)", "SOS (As needed)", "Stat (Immediately)"];
 const DURATIONS = ["3 days", "5 days", "7 days", "14 days", "1 month", "Ongoing"];
 
-export default function DiagnosisManagement({ patient, onUpdatePatient, encounterId }: DiagnosisManagementProps) {
+export default function DiagnosisManagement({ patient, onUpdatePatient, encounterId, onComplete }: DiagnosisManagementProps) {
   const [error, setError] = useState<string | null>(null);
 
   const [newRx, setNewRx] = useState<Partial<PrescriptionItem>>({});
@@ -64,6 +65,8 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
       let payload;
       if (type === "pharmacy") payload = patient.prescriptions || [];
       else if (type === "inpatient_pharmacy") payload = patient.inpatientPrescriptions || [];
+      else if (type === "lab") payload = patient.labInvestigations || [];
+      else if (type === "radiology") payload = patient.radiologyInvestigations || [];
       else payload = patient.prescribedInvestigations || "";
       
       const res = await fetch(`/api/doctor/encounter/${encounterId}/dispatch`, {
@@ -178,14 +181,8 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
   };
 
   const markComplete = async () => {
-    const res = await fetch(`/api/doctor/encounter/${encounterId}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: patient.isAdmitted ? "ADMITTED" : "COMPLETED" })
-    });
-    if (res.ok) {
-      onUpdatePatient({ ...patient, status: "complete" });
-      window.location.href = "/doctor/queue";
+    if (onComplete) {
+      onComplete();
     }
   };
 
@@ -238,52 +235,74 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
             <button onClick={() => dispatchOrders("radiology")} className="inline-flex items-center gap-1.5 bg-fuchsia-600/10 hover:bg-fuchsia-600/20 text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-500/30 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition">
               {dispatchStatus.radiology === "loading" ? "Sending..." : dispatchStatus.radiology === "success" ? "Sent ✓" : "Send to Radiology"}
             </button>
-            <button onClick={() => generateAI("prescribedInvestigations", "investigations")} disabled={patient.loading}
-              className="inline-flex items-center gap-1.5 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition">
-              <Sparkles className={`w-3 h-3 ${patient.loading ? "animate-spin" : ""}`} /> {patient.loading ? "Generating..." : "AI Generate"}
-            </button>
           </div>
         </div>
         
         <div className="flex bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl gap-1 border border-slate-200 dark:border-slate-800 mb-4">
-          <button onClick={() => setInvTab("hemato")} className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition ${invTab === "hemato" ? "bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>Hematological</button>
-          <button onClick={() => setInvTab("radio")} className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition ${invTab === "radio" ? "bg-white dark:bg-slate-800 text-fuchsia-600 dark:text-fuchsia-400 shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>Radiological</button>
+          <button onClick={() => setInvTab("hemato")} className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition ${invTab === "hemato" ? "bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>Hematological / Lab</button>
+          <button onClick={() => setInvTab("radio")} className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition ${invTab === "radio" ? "bg-white dark:bg-slate-800 text-fuchsia-600 dark:text-fuchsia-400 shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>Radiological / Imaging</button>
         </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
           {(invTab === "hemato" ? HEMATO_INV : RADIO_INV).map((inv) => (
             <button key={inv} onClick={() => {
-              const current = patient.prescribedInvestigations ? patient.prescribedInvestigations + "\n" : "";
-              if (!current.includes(inv)) updateInvestigations(current + inv);
+              if (invTab === "hemato") {
+                if (!(patient.labInvestigations || []).find(i => i.name === inv)) {
+                  onUpdatePatient({ ...patient, labInvestigations: [...(patient.labInvestigations || []), { id: crypto.randomUUID(), name: inv, type: "lab", status: "PENDING" }] });
+                }
+              } else {
+                if (!(patient.radiologyInvestigations || []).find(i => i.name === inv)) {
+                  onUpdatePatient({ ...patient, radiologyInvestigations: [...(patient.radiologyInvestigations || []), { id: crypto.randomUUID(), name: inv, type: "radiology", status: "PENDING" }] });
+                }
+              }
             }} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-semibold transition">{inv}</button>
           ))}
         </div>
         
-        <div className="flex gap-2 items-start">
+        <div className="flex gap-2 items-start mb-4">
           <div className="flex-1">
             <input 
               type="text"
               value={newInv} 
               onChange={(e) => setNewInv(e.target.value)} 
-              placeholder="Type custom investigation..."
+              placeholder={`Type custom ${invTab === "hemato" ? "lab" : "radiology"} investigation...`}
               className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition font-medium" 
             />
           </div>
           <button onClick={() => {
             if (!newInv.trim()) return;
-            const current = patient.prescribedInvestigations ? patient.prescribedInvestigations + "\n" : "";
-            updateInvestigations(current + newInv.trim());
+            if (invTab === "hemato") {
+              if (!(patient.labInvestigations || []).find(i => i.name === newInv.trim())) {
+                onUpdatePatient({ ...patient, labInvestigations: [...(patient.labInvestigations || []), { id: crypto.randomUUID(), name: newInv.trim(), type: "lab", status: "PENDING" }] });
+              }
+            } else {
+              if (!(patient.radiologyInvestigations || []).find(i => i.name === newInv.trim())) {
+                onUpdatePatient({ ...patient, radiologyInvestigations: [...(patient.radiologyInvestigations || []), { id: crypto.randomUUID(), name: newInv.trim(), type: "radiology", status: "PENDING" }] });
+              }
+            }
             setNewInv("");
           }} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-md transition whitespace-nowrap">Add</button>
         </div>
         
-        <textarea 
-          value={patient.prescribedInvestigations || ""} 
-          onChange={(e) => updateInvestigations(e.target.value)}
-          rows={4} 
-          placeholder="Ordered investigations will appear here..."
-          className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition font-medium resize-y" 
-        />
+        <div className="space-y-2">
+          {(invTab === "hemato" ? (patient.labInvestigations || []) : (patient.radiologyInvestigations || [])).map((inv, idx) => (
+            <div key={inv.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm">
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{inv.name}</span>
+              <button onClick={() => {
+                if (invTab === "hemato") {
+                  onUpdatePatient({ ...patient, labInvestigations: (patient.labInvestigations || []).filter((_, i) => i !== idx) });
+                } else {
+                  onUpdatePatient({ ...patient, radiologyInvestigations: (patient.radiologyInvestigations || []).filter((_, i) => i !== idx) });
+                }
+              }} className="text-slate-400 hover:text-red-500 transition">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+          {(invTab === "hemato" ? (patient.labInvestigations || []) : (patient.radiologyInvestigations || [])).length === 0 && (
+            <p className="text-xs text-slate-500 text-center py-4">No {invTab === "hemato" ? "lab" : "radiology"} investigations added yet.</p>
+          )}
+        </div>
       </section>
 
       {/* Prescriptions */}
@@ -478,6 +497,14 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
           <Activity className="w-5 h-5" />
           {patient.isAdmitted ? "Admitted (Inpatient)" : "Admit Patient"}
         </button>
+
+        {patient.isAdmitted && (
+          <a href={`/doctor/encounter/${encounterId}/discharge`} target="_blank" rel="noreferrer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold bg-sky-600 hover:bg-sky-500 text-white shadow-lg transition">
+            <FileText className="w-5 h-5" />
+            Create Discharge Summary
+          </a>
+        )}
 
         <button onClick={markComplete} disabled={patient.status === "complete"}
           className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold shadow-lg transition ${patient.status === "complete" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40"}`}>

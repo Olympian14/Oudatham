@@ -52,29 +52,36 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           }))
         });
       }
-    } else if (type === "lab" || type === "radiology") {
-      // payload is investigations string
-      const tests = (payload || "")
-        .split("\n")
-        .map((t: string) => t.trim())
-        .filter((t: string) => t.length > 0);
-
-      // We should probably only delete pending ones for the specific category if we want to separate them.
-      // But for simplicity, we can delete all pending for this encounter, OR just append. 
-      // Given the UX, if they click "Send to Lab", it resyncs the whole list.
-      // Let's delete all pending for this encounter for now.
+    } else if (type === "lab") {
+      // payload is array of InvestigationItem
       await prisma.investigation.deleteMany({
         where: { encounterId: id, status: "PENDING" }
       });
-
-      if (tests.length > 0) {
+      if (payload && payload.length > 0) {
         const now = Date.now();
         await prisma.investigation.createMany({
-          data: tests.map((testName: string, i: number) => ({
+          data: payload.map((inv: any, i: number) => ({
             invUid: `INV-${now}-${i}`,
             encounterId: id,
-            testName,
-            category: type === "radiology" ? "Radiology" : "Laboratory",
+            testName: inv.name,
+            category: "Laboratory",
+            status: "PENDING"
+          }))
+        });
+      }
+    } else if (type === "radiology") {
+      // payload is array of InvestigationItem
+      await prisma.imagingOrder.deleteMany({
+        where: { encounterId: id, status: "PENDING" }
+      });
+      if (payload && payload.length > 0) {
+        const now = Date.now();
+        await prisma.imagingOrder.createMany({
+          data: payload.map((inv: any, i: number) => ({
+            orderUid: `IMG-${now}-${i}`,
+            encounterId: id,
+            modality: "Radiology",
+            bodyPart: inv.name,
             status: "PENDING"
           }))
         });

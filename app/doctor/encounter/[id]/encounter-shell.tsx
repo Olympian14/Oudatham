@@ -24,6 +24,7 @@ export default function EncounterShell({ encounterId, initialData }: { encounter
   const [activeSection, setActiveSection] = useState("demo");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
 
   // Sync to backend automatically when patient data changes
   useEffect(() => {
@@ -72,6 +73,32 @@ export default function EncounterShell({ encounterId, initialData }: { encounter
   };
 
   const completeEncounter = async () => {
+    // Validation
+    const missing: string[] = [];
+    if (!patient.cc || patient.cc.length === 0 || !patient.cc.some(c => c.text.trim() !== "")) {
+      missing.push("cc");
+    }
+    const hasHpi = Object.values(patient.hpiData || {}).some(d => Object.keys(d).length > 0) || Object.values(patient.customHpi || {}).some(t => t.trim() !== "");
+    if (!hasHpi) {
+      if (!missing.includes("hx")) missing.push("hx");
+    }
+    const hasSysHx = Object.keys(patient.sysPos || {}).length > 0 || Object.keys(patient.sysNeg || {}).length > 0;
+    if (!hasSysHx) {
+      if (!missing.includes("hx")) missing.push("hx");
+    }
+    const hasRx = patient.isAdmitted ? (patient.inpatientPrescriptions && patient.inpatientPrescriptions.length > 0) : (patient.prescriptions && patient.prescriptions.length > 0);
+    if (!hasRx) {
+      missing.push("dx");
+    }
+
+    if (missing.length > 0) {
+      setMissingFields(missing);
+      alert("Cannot complete visit. Please fill the mandatory fields: Chief Complaints, HPI, Systemic History, and Prescriptions.");
+      scrollTo(missing[0]);
+      return;
+    }
+
+    setMissingFields([]);
     if (!confirm("Are you sure you want to finalize this encounter? No further edits will be allowed.")) return;
     try {
       await fetch(`/api/doctor/encounter/${encounterId}/complete`, { method: "POST" });
@@ -105,8 +132,9 @@ export default function EncounterShell({ encounterId, initialData }: { encounter
         <div className="flex-1 overflow-y-auto p-4 space-y-1">
           {STEPS.map((s) => (
             <button key={s.id} onClick={() => scrollTo(s.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition ${activeSection === s.id ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm border border-indigo-200 dark:border-indigo-500/20" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50"}`}>
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition ${activeSection === s.id ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm border border-indigo-200 dark:border-indigo-500/20" : missingFields.includes(s.id) ? "text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-800" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50"}`}>
               <span className="text-base">{s.ic}</span> {s.lb}
+              {missingFields.includes(s.id) && <span className="ml-auto w-2 h-2 rounded-full bg-rose-500 animate-pulse" />}
             </button>
           ))}
         </div>
@@ -152,11 +180,11 @@ export default function EncounterShell({ encounterId, initialData }: { encounter
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-100/50 via-slate-50 to-slate-50 dark:from-indigo-900/10 dark:via-slate-950 dark:to-slate-950 pointer-events-none fixed" />
           <div className="max-w-full mx-auto pb-24 relative z-10 space-y-6">
             <div id="demo" className="scroll-mt-8"><Demographics patient={patient} onUpdatePatient={updatePatient} /></div>
-            <div id="cc" className="scroll-mt-8"><Complaints patient={patient} onUpdatePatient={updatePatient} /></div>
-            <div id="hx" className="scroll-mt-8"><History patient={patient} onUpdatePatient={updatePatient} /></div>
+            <div id="cc" className={`scroll-mt-8 rounded-xl transition ${missingFields.includes("cc") ? "ring-2 ring-rose-500 shadow-lg shadow-rose-500/20" : ""}`}><Complaints patient={patient} onUpdatePatient={updatePatient} /></div>
+            <div id="hx" className={`scroll-mt-8 rounded-xl transition ${missingFields.includes("hx") ? "ring-2 ring-rose-500 shadow-lg shadow-rose-500/20" : ""}`}><History patient={patient} onUpdatePatient={updatePatient} /></div>
             <div id="bg" className="scroll-mt-8"><Background patient={patient} onUpdatePatient={updatePatient} /></div>
             <div id="ex" className="scroll-mt-8"><Examination patient={patient} onUpdatePatient={updatePatient} /></div>
-            <div id="dx" className="scroll-mt-8"><DiagnosisManagement patient={patient} onUpdatePatient={updatePatient} encounterId={encounterId} /></div>
+            <div id="dx" className={`scroll-mt-8 rounded-xl transition ${missingFields.includes("dx") ? "ring-2 ring-rose-500 shadow-lg shadow-rose-500/20" : ""}`}><DiagnosisManagement patient={patient} onUpdatePatient={updatePatient} encounterId={encounterId} onComplete={completeEncounter} /></div>
           </div>
         </main>
       </div>
