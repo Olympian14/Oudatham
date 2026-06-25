@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String     @id @default(uuid())
+  name       String
+  role       String     // DOCTOR, LAB_TECH, RADIOLOGIST, PHARMACIST, ADMIN
+  department String?
+  mobile     String?    @unique
+  password   String
+  encounters Encounter[]
+  auditLogs  AuditLog[]
+}
+
+model Patient {
+  id          String      @id @default(uuid())
+  patientUid  String      @unique
+  mobile      String      @unique
+  name        String
+  gender      String
+  dob         DateTime?
+  age         Int?
+  address     String?
+  district    String?
+  state       String?
+  bloodGroup  String?
+  emergency   String?
+  createdAt   DateTime    @default(now())
+  encounters  Encounter[]
+}
+
+model Encounter {
+  id             String          @id @default(uuid())
+  encounterUid   String          @unique
+  patientId      String
+  patient        Patient         @relation(fields: [patientId], references: [id])
+  doctorId       String?
+  doctor         User?           @relation(fields: [doctorId], references: [id])
+  department     String          @default("General Medicine")
+  status         String          @default("WAITING")
+  createdAt      DateTime        @default(now())
+  caseSheet      CaseSheet?
+  investigations Investigation[]
+  prescriptions  Prescription[]
+  imagingOrders  ImagingOrder[]
+}
+
+model CaseSheet {
+  id          String    @id @default(uuid())
+  encounterId String    @unique
+  encounter   Encounter @relation(fields: [encounterId], references: [id])
+  jsonData    String
+}
+
+model Investigation {
+  id          String    @id @default(uuid())
+  invUid      String    @unique
+  encounterId String
+  encounter   Encounter @relation(fields: [encounterId], references: [id])
+  testName    String
+  category    String?
+  status      String    @default("PENDING")
+  result      String?
+  createdAt   DateTime  @default(now())
+}
+
+model Prescription {
+  id           String    @id @default(uuid())
+  encounterId  String
+  encounter    Encounter @relation(fields: [encounterId], references: [id])
+  drugName     String
+  dose         String
+  route        String?
+  frequency    String
+  duration     String
+  instructions String?
+  status       String    @default("PENDING")
+}
+
+model ImagingOrder {
+  id          String    @id @default(uuid())
+  orderUid    String    @unique
+  encounterId String
+  encounter   Encounter @relation(fields: [encounterId], references: [id])
+  modality    String    // X-Ray, CT, MRI, USG, Echo
+  bodyPart    String
+  indication  String?
+  status      String    @default("PENDING")
+  report      String?
+  createdAt   DateTime  @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  timestamp DateTime @default(now())
+}

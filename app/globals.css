@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-slate-850: #172033;
+}
+
+:root {
+  --background: #020617;
+  --foreground: #e2e8f0;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Light mode overrides */
+.light-mode {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+.light-mode .bg-slate-950 {
+  background-color: #ffffff;
+}
+
+.light-mode .bg-slate-900 {
+  background-color: #f1f5f9;
+}
+
+.light-mode .bg-slate-900\/60 {
+  background-color: rgba(241, 245, 249, 0.6);
+}
+
+.light-mode .border-slate-800 {
+  border-color: #e2e8f0;
+}
+
+.light-mode .text-slate-100 {
+  color: #0f172a;
+}
+
+.light-mode .text-slate-200 {
+  color: #1e293b;
+}
+
+.light-mode .text-slate-300 {
+  color: #334155;
+}
+
+.light-mode .text-slate-400 {
+  color: #64748b;
+}
+
+.light-mode .text-slate-500 {
+  color: #94a3b8;
+}
+
+.light-mode .placeholder-slate-600::placeholder {
+  color: #94a3b8;
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(99, 102, 241, 0.3);
+  color: inherit;
+}

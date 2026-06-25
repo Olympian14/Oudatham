@@ -1,0 +1,95 @@
+[
+  {
+    "id": 1782323942809,
+    "createdAt": "2026-06-24",
+    "status": "new",
+    "demo": {
+      "name": "",
+      "age": "",
+      "sex": "",
+      "addr": "",
+      "occ": ""
+    },
+    "cc": [
+      {
+        "text": "",
+        "durNum": "",
+        "durUnit": "days"
+      }
+    ],
+    "hxPhase": "hpi",
+    "hpiOpen": {},
+    "hpiData": {},
+    "customHpi": {},
+    "selectedSystems": [],
+    "sysData": {},
+    "sysPos": {},
+    "sysNeg": {},
+    "sysRisk": {},
+    "sysExtra": {},
+    "past": {
+      "sim": "",
+      "cond": "",
+      "surg": "",
+      "rf": "",
+      "dm": "",
+      "htn": "",
+      "tb": "",
+      "ibd": ""
+    },
+    "fam": {
+      "det": "",
+      "htn_dm": "",
+      "cardiac": "",
+      "malignancy": "",
+      "other": ""
+    },
+    "per": {
+      "sm": "",
+      "al": "",
+      "dt": "",
+      "mn": "",
+      "sexual": "",
+      "occ_hx": ""
+    },
+    "drg": {
+      "cur": "",
+      "allergies": "",
+      "otc": "",
+      "herbal": ""
+    },
+    "vit": {
+      "pu": "",
+      "bp": "",
+      "rr": "",
+      "tp": "",
+      "o2": "",
+      "jv": ""
+    },
+    "sgn": {
+      "pallor": false,
+      "icterus": false,
+      "clubbing": false,
+      "cyanosis": false,
+      "oedema": false,
+      "lymph": false,
+      "febrile": false
+    },
+    "exSystems": [],
+    "exData": {},
+    "summaryLoading": false,
+    "summaryText": "",
+    "summaryGenerated": false,
+    "provisionalDx": "",
+    "chat": [],
+    "aiTab": "summary",
+    "aiOut": {
+      "differentials": "",
+      "investigations": "",
+      "management": "",
+      "summary": ""
+    },
+    "loading": false,
+    "prescriptions": []
+  }
+]
