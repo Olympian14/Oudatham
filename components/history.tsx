@@ -74,7 +74,7 @@ export default function History({ patient, onUpdatePatient }: HistoryProps) {
   const systemIcons: Record<string, string> = { CVS: "🫀", CNS: "🧠", RS: "🫁", GIT: "🫄" };
 
   return (
-    <div id="history-component" className="space-y-6">
+    <div id="history-component" className="space-y-4">
       <div>
         <h2 className="text-2xl font-bold text-slate-100 tracking-tight">Clinical History</h2>
         <p className="text-sm text-slate-400 mt-1">Document the history of presenting illness and perform a targeted systemic review.</p>
@@ -176,7 +176,7 @@ export default function History({ patient, onUpdatePatient }: HistoryProps) {
 
       {/* Systemic Review Phase */}
       {phase === "sysHx" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* System selector cards */}
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
             {Object.keys(SYS).map((key) => {
@@ -209,7 +209,7 @@ export default function History({ patient, onUpdatePatient }: HistoryProps) {
 
               {/* Active system content */}
               {SYS[activeSysTab] && (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-6">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 space-y-4">
                   {/* Extra fields */}
                   {SYS[activeSysTab].extra && SYS[activeSysTab].extra!.length > 0 && (
                     <div className="space-y-3">
@@ -282,8 +282,8 @@ export default function History({ patient, onUpdatePatient }: HistoryProps) {
 
       {/* Trends Phase */}
       {phase === "trends" && (
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xl space-y-6">
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 shadow-xl space-y-4">
             <h3 className="text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-2">
               <TrendingUp className="w-4.5 h-4.5" /> Lab Result Trends
             </h3>

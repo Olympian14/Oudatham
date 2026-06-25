@@ -151,7 +151,7 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
   const px = patient.prescriptions || [];
 
   return (
-    <div id="diagnosis-management-component" className="space-y-8 pb-12">
+    <div id="diagnosis-management-component" className="space-y-4 pb-12">
       <div>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
           <Activity className="w-6 h-6 text-indigo-600 dark:text-indigo-400" /> Diagnosis & Management
@@ -162,7 +162,7 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
       {error && <div className="p-4 bg-red-500/10 border border-red-500/25 rounded-xl text-red-400 text-xs">{error}</div>}
 
       {/* Differential Diagnosis */}
-      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-4 shadow-xl space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
           <h3 className="text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-2">
             <Activity className="w-4.5 h-4.5" /> Differential Diagnosis
@@ -184,7 +184,7 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
       </section>
 
       {/* Investigations */}
-      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-4 shadow-xl space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
           <h3 className="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
             <FileText className="w-4.5 h-4.5" /> Investigations
@@ -245,7 +245,7 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
       </section>
 
       {/* Prescriptions */}
-      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xl space-y-6">
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-4 shadow-xl space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
           <h3 className="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
             <Pill className="w-4.5 h-4.5" /> Prescriptions
@@ -268,7 +268,7 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
         )}
 
         {/* New Prescription Form (Horizontal) */}
-        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-inner mb-6">
+        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-inner mb-6">
           <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800/80 pb-3 mb-4">New Prescription</h4>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             <div className="flex flex-col gap-1.5 md:col-span-2">

@@ -85,16 +85,16 @@ export default function Examination({ patient, onUpdatePatient }: ExaminationPro
   const systemIcons: Record<string, string> = { CVS: "🫀", CNS: "🧠", RS: "🫁", GIT: "🫄" };
 
   return (
-    <div id="examination-component" className="space-y-6">
+    <div id="examination-component" className="space-y-4">
       <div>
         <h2 className="text-2xl font-bold text-slate-100 tracking-tight">Physical Examination</h2>
         <p className="text-sm text-slate-400 mt-1">Record vital signs, general signs, and detailed systemic IPPA findings.</p>
       </div>
 
       {/* Vitals */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 shadow-xl space-y-4">
         <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2"><Activity className="w-4.5 h-4.5" /> Vital Signs</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="flex flex-col gap-1.5"><label className="text-xs font-bold uppercase tracking-wider text-slate-400">Pulse</label><SuggestionInput value={patient.vit?.pu || ""} onChange={(val) => updateVital("pu", val)} placeholder="e.g. 72 bpm" suggestions={VITALS_SUGGESTIONS.pu} className={inputClass} /></div>
           <div className="flex flex-col gap-1.5"><label className="text-xs font-bold uppercase tracking-wider text-slate-400">Blood Pressure</label><SuggestionInput value={patient.vit?.bp || ""} onChange={(val) => updateVital("bp", val)} placeholder="mmHg" suggestions={VITALS_SUGGESTIONS.bp} className={inputClass} /></div>
           <div className="flex flex-col gap-1.5"><label className="text-xs font-bold uppercase tracking-wider text-slate-400">Resp Rate</label><SuggestionInput value={patient.vit?.rr || ""} onChange={(val) => updateVital("rr", val)} placeholder="/min" suggestions={VITALS_SUGGESTIONS.rr} className={inputClass} /></div>
@@ -105,7 +105,7 @@ export default function Examination({ patient, onUpdatePatient }: ExaminationPro
       </div>
 
       {/* General Signs */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 shadow-xl space-y-4">
         <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2"><Thermometer className="w-4.5 h-4.5" /> General Signs Checklist</h3>
         <div className="flex flex-wrap gap-2">
           {["pallor", "icterus", "clubbing", "cyanosis", "oedema", "lymph", "febrile"].map((sign) => {
@@ -151,7 +151,7 @@ export default function Examination({ patient, onUpdatePatient }: ExaminationPro
               </div>
             )}
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-6">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 shadow-sm space-y-4">
               {[
                 { sec: "I", lb: "Inspection" },
                 { sec: "P", lb: "Palpation" },

@@ -147,7 +147,7 @@ export default function EncounterShell({ encounterId, initialData }: { encounter
         {/* Scrollable Content Area */}
         <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 relative scroll-smooth">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-100/50 via-slate-50 to-slate-50 dark:from-indigo-900/10 dark:via-slate-950 dark:to-slate-950 pointer-events-none fixed" />
-          <div className="max-w-4xl mx-auto pb-24 relative z-10 space-y-12">
+          <div className="max-w-full mx-auto pb-24 relative z-10 space-y-6">
             <div id="demo" className="scroll-mt-8"><Demographics patient={patient} onUpdatePatient={updatePatient} /></div>
             <div id="cc" className="scroll-mt-8"><Complaints patient={patient} onUpdatePatient={updatePatient} /></div>
             <div id="hx" className="scroll-mt-8"><History patient={patient} onUpdatePatient={updatePatient} /></div>
