@@ -81,7 +81,7 @@ export default function Examination({ patient, onUpdatePatient }: ExaminationPro
   const activeTab = patient.activeExTab || (patient.exSystems?.[0] || "");
   const setActiveTab = (tab: string) => onUpdatePatient({ ...patient, activeExTab: tab });
 
-  const inputClass = "w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/10 text-sm transition";
+  const inputClass = "w-full px-3.5 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/10 text-sm transition";
   const systemIcons: Record<string, string> = { CVS: "🫀", CNS: "🧠", RS: "🫁", GIT: "🫄" };
 
   return (
@@ -92,7 +92,7 @@ export default function Examination({ patient, onUpdatePatient }: ExaminationPro
       </div>
 
       {/* Vitals */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
         <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2"><Activity className="w-4.5 h-4.5" /> Vital Signs</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="flex flex-col gap-1.5"><label className="text-xs font-bold uppercase tracking-wider text-slate-400">Pulse</label><SuggestionInput value={patient.vit?.pu || ""} onChange={(val) => updateVital("pu", val)} placeholder="e.g. 72 bpm" suggestions={VITALS_SUGGESTIONS.pu} className={inputClass} /></div>
@@ -105,14 +105,14 @@ export default function Examination({ patient, onUpdatePatient }: ExaminationPro
       </div>
 
       {/* General Signs */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
         <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2"><Thermometer className="w-4.5 h-4.5" /> General Signs Checklist</h3>
         <div className="flex flex-wrap gap-2">
           {["pallor", "icterus", "clubbing", "cyanosis", "oedema", "lymph", "febrile"].map((sign) => {
             const isSet = patient.sgn?.[sign as keyof Signs];
             return (
               <button key={sign} type="button" onClick={() => toggleSign(sign as keyof Signs)}
-                className={`px-3 py-2 rounded-lg text-xs font-semibold border transition ${isSet ? "bg-red-600/20 border-red-500/40 text-red-300" : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700"}`}>
+                className={`px-3 py-2 rounded-lg text-xs font-semibold border transition ${isSet ? "bg-red-100 border-red-300 text-red-700 dark:bg-red-600/20 dark:border-red-500/40 dark:text-red-300" : "bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-800 dark:hover:text-slate-300"}`}>
                 {sign.charAt(0).toUpperCase() + sign.slice(1)} {sign === "lymph" ? "Nodes" : ""}
               </button>
             );
@@ -122,17 +122,17 @@ export default function Examination({ patient, onUpdatePatient }: ExaminationPro
 
       {/* Systemic Exam */}
       <div className="space-y-4">
-        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Systemic Examination</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Systemic Examination</h3>
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
           {Object.keys(SYS).map((key) => {
             const s = SYS[key];
             const isSelected = (patient.exSystems || []).includes(key);
             return (
               <button key={key} type="button" onClick={() => toggleExSystem(key)}
-                className={`p-3 rounded-xl border text-left transition relative ${isSelected ? "bg-slate-950 border-indigo-600 shadow-md shadow-indigo-950/20" : "bg-slate-950/40 border-slate-800 hover:border-slate-700"}`}>
-                <div className="text-xl mb-1">{systemIcons[key]}</div>
-                <div className={`text-xs font-bold tracking-tight ${isSelected ? "text-indigo-400" : "text-slate-300"}`}>{s.name}</div>
-                {isSelected && <CheckCircle2 className="absolute top-3 right-3 w-4 h-4 text-indigo-400" />}
+                className={`flex-shrink-0 flex items-center gap-2 p-3 rounded-xl border text-left transition relative ${isSelected ? "bg-white dark:bg-slate-950 border-indigo-600 shadow-md shadow-indigo-950/20 ring-1 ring-indigo-500/30" : "bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"}`}>
+                <div className="text-xl">{systemIcons[key]}</div>
+                <div className={`text-xs font-bold tracking-tight pr-6 ${isSelected ? "text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300"}`}>{s.name}</div>
+                {isSelected && <CheckCircle2 className="absolute top-1/2 -translate-y-1/2 right-2 w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
               </button>
             );
           })}
@@ -141,17 +141,17 @@ export default function Examination({ patient, onUpdatePatient }: ExaminationPro
         {(patient.exSystems || []).length > 0 && SYS[activeTab] && (
           <div className="space-y-4 pt-2">
             {(patient.exSystems || []).length > 1 && (
-              <div className="flex bg-slate-900/50 p-1 rounded-xl gap-1 border border-slate-800 overflow-x-auto">
+              <div className="flex bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl gap-1 border border-slate-200 dark:border-slate-800 overflow-x-auto">
                 {(patient.exSystems || []).map((sk) => (
                   <button key={sk} onClick={() => setActiveTab(sk)}
-                    className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-2 whitespace-nowrap ${activeTab === sk ? "bg-indigo-600 text-white shadow-md" : "text-slate-400 hover:text-slate-200"}`}>
+                    className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-2 whitespace-nowrap ${activeTab === sk ? "bg-indigo-600 text-white shadow-md" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>
                     {SYS[sk].name}
                   </button>
                 ))}
               </div>
             )}
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-6">
               {[
                 { sec: "I", lb: "Inspection" },
                 { sec: "P", lb: "Palpation" },
@@ -162,14 +162,14 @@ export default function Examination({ patient, onUpdatePatient }: ExaminationPro
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">{lb}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {SYS[activeTab].ex[sec as keyof typeof SYS[typeof activeTab]["ex"]].map((item) => (
-                      <div key={item} className="flex flex-col gap-1.5 bg-slate-950/30 p-3 rounded-lg border border-slate-800/50">
+                      <div key={item} className="flex flex-col gap-1.5 bg-slate-50 dark:bg-slate-950/30 p-3 rounded-lg border border-slate-200 dark:border-slate-800/50">
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{item}</label>
-                        <SuggestionInput value={patient.exData?.[activeTab]?.[sec]?.[item] || ""} onChange={(val) => updateExItem(activeTab, sec, item, val)} placeholder="Normal / Abnormal findings..." suggestions={IPPA_SUGGESTIONS_MAP[activeTab]?.[sec] || CUSTOM_DESCRIPTIVE_SUGGESTIONS} className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-xs transition" />
+                        <SuggestionInput value={patient.exData?.[activeTab]?.[sec]?.[item] || ""} onChange={(val) => updateExItem(activeTab, sec, item, val)} placeholder="Normal / Abnormal findings..." suggestions={IPPA_SUGGESTIONS_MAP[activeTab]?.[sec] || CUSTOM_DESCRIPTIVE_SUGGESTIONS} className="w-full px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-xs transition" />
                       </div>
                     ))}
-                    <div className="flex flex-col gap-1.5 bg-slate-950/30 p-3 rounded-lg border border-slate-800/50 md:col-span-2">
+                    <div className="flex flex-col gap-1.5 bg-slate-50 dark:bg-slate-950/30 p-3 rounded-lg border border-slate-200 dark:border-slate-800/50 md:col-span-2">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Custom {lb} Notes</label>
-                      <SuggestionInput value={(patient.exData?.[activeTab]?.["custom_"] as any)?.[sec] || ""} onChange={(val) => updateExItem(activeTab, "custom_" as any, sec, val)} placeholder="Additional descriptive findings..." suggestions={CUSTOM_DESCRIPTIVE_SUGGESTIONS} className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-xs transition" />
+                      <SuggestionInput value={(patient.exData?.[activeTab]?.["custom_"] as any)?.[sec] || ""} onChange={(val) => updateExItem(activeTab, "custom_" as any, sec, val)} placeholder="Additional descriptive findings..." suggestions={CUSTOM_DESCRIPTIVE_SUGGESTIONS} className="w-full px-3 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-xs transition" />
                     </div>
                   </div>
                 </div>

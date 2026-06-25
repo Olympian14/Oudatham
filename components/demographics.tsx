@@ -19,7 +19,7 @@ export default function Demographics({ patient, onUpdatePatient }: DemographicsP
     <div id="demographics-component" className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-          <UserCircle className="w-6 h-6 text-indigo-400" />
+          <UserCircle className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
           Patient Demographics
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Record core identifying information for the patient encounter.</p>

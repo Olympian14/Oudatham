@@ -74,15 +74,15 @@ export default function SuggestionInput({
       )}
       <AnimatePresence>
         {isOpen && filtered.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: -4, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.98 }} transition={{ duration: 0.12 }} className="absolute left-0 right-0 z-50 mt-1.5 max-h-60 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-1.5 shadow-2xl shadow-black/80 backdrop-blur-md">
-            <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-500 border-b border-slate-100 dark:border-slate-900 mb-1 flex items-center justify-between">
+          <motion.div initial={{ opacity: 0, y: -4, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.98 }} transition={{ duration: 0.12 }} className="absolute left-0 right-0 z-50 mt-1.5 max-h-60 overflow-y-auto rounded-xl border border-slate-800 dark:border-slate-200 dark:border-slate-800 bg-slate-950 dark:bg-slate-50 dark:bg-slate-950 p-1.5 shadow-2xl shadow-black/80 backdrop-blur-md">
+            <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-600 dark:text-slate-500 border-b border-slate-900 dark:border-slate-100 dark:border-slate-900 mb-1 flex items-center justify-between">
               <span>Matching Suggestions</span>
-              <span className="text-[9px] font-mono lowercase text-slate-400 dark:text-slate-600">↑↓ navigate</span>
+              <span className="text-[9px] font-mono lowercase text-slate-500 dark:text-slate-400 dark:text-slate-600">↑↓ navigate</span>
             </div>
             <div className="space-y-0.5">
               {filtered.map((item, idx) => (
                 <button key={idx} type="button" onMouseDown={(e) => { e.preventDefault(); selectSuggestion(item); }} onMouseEnter={() => setHighlightedIndex(idx)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors duration-100 flex items-center justify-between ${highlightedIndex === idx ? "bg-indigo-600/15 border border-indigo-500/25 text-indigo-200" : "text-slate-700 dark:text-slate-300 border border-transparent hover:bg-white dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100"}`}>
+                  className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors duration-100 flex items-center justify-between ${highlightedIndex === idx ? "bg-indigo-600/15 border border-indigo-500/25 text-indigo-200" : "text-slate-300 dark:text-slate-700 dark:text-slate-300 border border-transparent hover:bg-white dark:hover:bg-slate-900 hover:text-slate-100 dark:hover:text-slate-900 dark:hover:text-slate-100"}`}>
                   <span className="truncate font-medium">{renderSuggestionText(item)}</span>
                   {highlightedIndex === idx && <span className="text-[9px] bg-indigo-500/20 text-indigo-400 font-bold px-1 py-0.5 rounded uppercase font-mono animate-pulse">Select</span>}
                 </button>

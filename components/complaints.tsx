@@ -38,7 +38,7 @@ export default function Complaints({ patient, onUpdatePatient }: ComplaintsProps
     <div id="complaints-component" className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-          <AlertCircle className="w-6 h-6 text-indigo-400" />
+          <AlertCircle className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
           Chief Complaints
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Document the patient's presenting symptoms with precise durations.</p>
@@ -49,11 +49,11 @@ export default function Complaints({ patient, onUpdatePatient }: ComplaintsProps
           <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-lg">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-xs font-bold border border-indigo-500/25">{idx + 1}</span>
+                <span className="w-7 h-7 rounded-full bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold border border-indigo-500/25">{idx + 1}</span>
                 <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Complaint {idx + 1}</span>
               </div>
               {complaints.length > 1 && (
-                <button onClick={() => removeComplaint(idx)} className="p-1.5 text-slate-600 dark:text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"><X className="w-4 h-4" /></button>
+                <button onClick={() => removeComplaint(idx)} className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"><X className="w-4 h-4" /></button>
               )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -81,8 +81,8 @@ export default function Complaints({ patient, onUpdatePatient }: ComplaintsProps
         ))}
       </div>
 
-      <button onClick={addComplaint} className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-white rounded-xl text-sm font-semibold transition">
-        <Plus className="w-4 h-4 text-indigo-400" /> Add Another Complaint
+      <button onClick={addComplaint} className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-xl text-sm font-semibold transition shadow-sm">
+        <Plus className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Add Another Complaint
       </button>
     </div>
   );

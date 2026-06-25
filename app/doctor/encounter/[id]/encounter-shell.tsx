@@ -21,7 +21,7 @@ const STEPS: Step[] = [
 
 export default function EncounterShell({ encounterId, initialData }: { encounterId: string, initialData: Patient }) {
   const [patient, setPatient] = useState<Patient>(initialData);
-  const [step, setStep] = useState(0);
+  const [activeSection, setActiveSection] = useState("demo");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -47,6 +47,26 @@ export default function EncounterShell({ encounterId, initialData }: { encounter
     return () => clearTimeout(timeout);
   }, [patient, encounterId]);
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      { rootMargin: "-20% 0px -60% 0px" }
+    );
+
+    STEPS.forEach((s) => {
+      const el = document.getElementById(s.id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const updatePatient = (updated: Patient) => {
     setPatient(updated);
   };
@@ -61,20 +81,10 @@ export default function EncounterShell({ encounterId, initialData }: { encounter
     }
   };
 
-  const renderContent = () => {
-    switch (step) {
-      case 0: return <Demographics patient={patient} onUpdatePatient={updatePatient} />;
-      case 1: return <Complaints patient={patient} onUpdatePatient={updatePatient} />;
-      case 2: return <History patient={patient} onUpdatePatient={updatePatient} />;
-      case 3: return <Background patient={patient} onUpdatePatient={updatePatient} />;
-      case 4: return <Examination patient={patient} onUpdatePatient={updatePatient} />;
-      case 5: return <DiagnosisManagement patient={patient} onUpdatePatient={updatePatient} />;
-      default: return <Demographics patient={patient} onUpdatePatient={updatePatient} />;
-    }
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    setSidebarOpen(false);
   };
-
-  const canNext = step < STEPS.length - 1;
-  const canPrev = step > 0;
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
@@ -93,9 +103,9 @@ export default function EncounterShell({ encounterId, initialData }: { encounter
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-1">
-          {STEPS.map((s, i) => (
-            <button key={s.id} onClick={() => { setStep(i); setSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition ${step === i ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm border border-indigo-200 dark:border-indigo-500/20" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50"}`}>
+          {STEPS.map((s) => (
+            <button key={s.id} onClick={() => scrollTo(s.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition ${activeSection === s.id ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm border border-indigo-200 dark:border-indigo-500/20" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50"}`}>
               <span className="text-base">{s.ic}</span> {s.lb}
             </button>
           ))}
@@ -135,27 +145,17 @@ export default function EncounterShell({ encounterId, initialData }: { encounter
         </header>
 
         {/* Scrollable Content Area */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 relative">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/10 via-slate-950 to-slate-950 pointer-events-none" />
-          <div className="max-w-4xl mx-auto pb-24 relative z-10">
-            {renderContent()}
+        <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 relative scroll-smooth">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-100/50 via-slate-50 to-slate-50 dark:from-indigo-900/10 dark:via-slate-950 dark:to-slate-950 pointer-events-none fixed" />
+          <div className="max-w-4xl mx-auto pb-24 relative z-10 space-y-12">
+            <div id="demo" className="scroll-mt-8"><Demographics patient={patient} onUpdatePatient={updatePatient} /></div>
+            <div id="cc" className="scroll-mt-8"><Complaints patient={patient} onUpdatePatient={updatePatient} /></div>
+            <div id="hx" className="scroll-mt-8"><History patient={patient} onUpdatePatient={updatePatient} /></div>
+            <div id="bg" className="scroll-mt-8"><Background patient={patient} onUpdatePatient={updatePatient} /></div>
+            <div id="ex" className="scroll-mt-8"><Examination patient={patient} onUpdatePatient={updatePatient} /></div>
+            <div id="dx" className="scroll-mt-8"><DiagnosisManagement patient={patient} onUpdatePatient={updatePatient} encounterId={encounterId} /></div>
           </div>
         </main>
-
-        {/* Navigation Footer */}
-        <div className="h-16 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 sm:px-6 lg:px-8 flex items-center justify-between shrink-0 sticky bottom-0 shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.5)]">
-          <div className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider">{STEPS[step]?.lb} <span className="text-slate-400 dark:text-slate-700 mx-2">•</span> Step {step + 1} of 6</div>
-          <div className="flex gap-2.5">
-            <button disabled={!canPrev} onClick={() => setStep(step - 1)}
-              className="px-4 py-2 bg-white dark:bg-slate-900 disabled:bg-slate-50 dark:disabled:bg-slate-950 disabled:border-slate-200 dark:disabled:border-slate-800/50 disabled:text-slate-500 dark:disabled:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-semibold transition border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm">
-              <ChevronLeft className="w-4 h-4" /> Prev
-            </button>
-            <button disabled={!canNext} onClick={() => setStep(step + 1)}
-              className="px-4 py-2 bg-indigo-600 disabled:bg-slate-800 hover:bg-indigo-500 disabled:text-slate-500 dark:disabled:text-slate-500 text-white rounded-lg text-sm font-semibold shadow-[0_0_15px_-3px_rgba(79,70,229,0.4)] disabled:shadow-none transition flex items-center gap-1.5 border border-indigo-500 disabled:border-slate-300 dark:disabled:border-slate-700">
-              Next <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

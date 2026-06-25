@@ -8,13 +8,23 @@ import SuggestionInput from "./suggestion-input";
 interface DiagnosisManagementProps {
   patient: Patient;
   onUpdatePatient: (updated: Patient) => void;
+  encounterId: string;
 }
 
-const COMMON_DRUGS = [
-  "Paracetamol", "Amoxicillin", "Azithromycin", "Pantoprazole",
-  "Ibuprofen", "Amlodipine", "Metformin", "Atorvastatin",
-  "Losartan", "Levothyroxine", "Cetirizine", "Salbutamol Inhaler"
+const SMART_DRUGS = [
+  { name: "Paracetamol", dosage: "500mg", defaultFreq: "SOS (As needed)", defaultDuration: "3 days", instructions: "After meals" },
+  { name: "Amoxicillin", dosage: "500mg", defaultFreq: "TDS (Thrice daily)", defaultDuration: "5 days", instructions: "After meals" },
+  { name: "Azithromycin", dosage: "500mg", defaultFreq: "OD (Once daily)", defaultDuration: "3 days", instructions: "Before meals" },
+  { name: "Pantoprazole", dosage: "40mg", defaultFreq: "OD (Once daily)", defaultDuration: "5 days", instructions: "Before breakfast" },
+  { name: "Ibuprofen", dosage: "400mg", defaultFreq: "BD (Twice daily)", defaultDuration: "3 days", instructions: "After meals" },
+  { name: "Amlodipine", dosage: "5mg", defaultFreq: "OD (Once daily)", defaultDuration: "1 month", instructions: "Morning" },
+  { name: "Metformin", dosage: "500mg", defaultFreq: "BD (Twice daily)", defaultDuration: "1 month", instructions: "With meals" },
+  { name: "Atorvastatin", dosage: "10mg", defaultFreq: "OD (Once daily)", defaultDuration: "1 month", instructions: "At bedtime" },
+  { name: "Levothyroxine", dosage: "50mcg", defaultFreq: "OD (Once daily)", defaultDuration: "1 month", instructions: "Early morning, empty stomach" },
+  { name: "Cetirizine", dosage: "10mg", defaultFreq: "OD (Once daily)", defaultDuration: "5 days", instructions: "At bedtime" },
 ];
+
+const COMMON_DRUG_NAMES = SMART_DRUGS.map(d => d.name);
 
 const COMMON_DIAGNOSES = [
   "Essential Hypertension", "Type 2 Diabetes Mellitus", "Acute Upper Respiratory Infection",
@@ -22,23 +32,50 @@ const COMMON_DIAGNOSES = [
   "Urinary Tract Infection", "Migraine", "Osteoarthritis", "Anxiety Disorder"
 ];
 
-const COMMON_INVESTIGATIONS = [
+const HEMATO_INV = [
   "Complete Blood Count (CBC)", "Basic Metabolic Panel (BMP)", "Comprehensive Metabolic Panel (CMP)",
-  "Lipid Panel", "HbA1c", "Thyroid Stimulating Hormone (TSH)",
-  "Urinalysis", "Chest X-Ray (CXR)", "Electrocardiogram (ECG)", "Liver Function Test (LFT)"
+  "Lipid Panel", "HbA1c", "Thyroid Stimulating Hormone (TSH)", "Liver Function Test (LFT)", "Urinalysis"
+];
+
+const RADIO_INV = [
+  "Chest X-Ray (CXR)", "Electrocardiogram (ECG)", "Ultrasound Abdomen", "CT Scan Head", "MRI Brain"
 ];
 
 const DOSAGES = ["5mg", "10mg", "20mg", "40mg", "50mg", "250mg", "500mg", "1g"];
 const FREQUENCIES = ["OD (Once daily)", "BD (Twice daily)", "TDS (Thrice daily)", "QID (Four times a day)", "SOS (As needed)", "Stat (Immediately)"];
 const DURATIONS = ["3 days", "5 days", "7 days", "14 days", "1 month", "Ongoing"];
 
-export default function DiagnosisManagement({ patient, onUpdatePatient }: DiagnosisManagementProps) {
+export default function DiagnosisManagement({ patient, onUpdatePatient, encounterId }: DiagnosisManagementProps) {
   const [error, setError] = useState<string | null>(null);
 
   // New Prescription State
   const [newRx, setNewRx] = useState<Partial<PrescriptionItem>>({
     name: "", dosage: "", frequency: "BD (Twice daily)", duration: "5 days", instructions: ""
   });
+  const [rxQty, setRxQty] = useState("1 Tab");
+  const [newInv, setNewInv] = useState("");
+  const [invTab, setInvTab] = useState<"hemato" | "radio">("hemato");
+  const [dispatchStatus, setDispatchStatus] = useState<Record<string, "idle" | "loading" | "success" | "error">>({
+    pharmacy: "idle", lab: "idle", radiology: "idle"
+  });
+
+  const dispatchOrders = async (type: "pharmacy" | "lab" | "radiology") => {
+    setDispatchStatus({ ...dispatchStatus, [type]: "loading" });
+    try {
+      const payload = type === "pharmacy" ? patient.prescriptions : patient.prescribedInvestigations;
+      const res = await fetch(`/api/doctor/encounter/${encounterId}/dispatch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, payload })
+      });
+      if (!res.ok) throw new Error("Dispatch failed");
+      setDispatchStatus({ ...dispatchStatus, [type]: "success" });
+      setTimeout(() => setDispatchStatus(prev => ({ ...prev, [type]: "idle" })), 3000);
+    } catch (e) {
+      setDispatchStatus({ ...dispatchStatus, [type]: "error" });
+      setTimeout(() => setDispatchStatus(prev => ({ ...prev, [type]: "idle" })), 3000);
+    }
+  };
 
   const updateDiagnosis = (val: string) => onUpdatePatient({ ...patient, status: "in-progress", diagnosis: val });
   const updateInvestigations = (val: string) => onUpdatePatient({ ...patient, status: "in-progress", prescribedInvestigations: val });
@@ -75,7 +112,7 @@ export default function DiagnosisManagement({ patient, onUpdatePatient }: Diagno
     const rx: PrescriptionItem = { 
       id: Date.now().toString(), 
       name: newRx.name || "", 
-      dosage: newRx.dosage || "", 
+      dosage: newRx.dosage ? `${newRx.dosage} (${rxQty})` : rxQty, 
       frequency: newRx.frequency || "", 
       duration: newRx.duration || "", 
       route: "", 
@@ -83,6 +120,23 @@ export default function DiagnosisManagement({ patient, onUpdatePatient }: Diagno
     };
     onUpdatePatient({ ...patient, status: "in-progress", prescriptions: [...(patient.prescriptions || []), rx] });
     setNewRx({ name: "", dosage: "", frequency: "BD (Twice daily)", duration: "5 days", instructions: "" });
+    setRxQty("1 Tab");
+  };
+
+  const handleDrugNameChange = (val: string) => {
+    const match = SMART_DRUGS.find(d => d.name.toLowerCase() === val.toLowerCase());
+    if (match) {
+      setNewRx({
+        ...newRx,
+        name: match.name,
+        dosage: match.dosage,
+        frequency: match.defaultFreq,
+        duration: match.defaultDuration,
+        instructions: match.instructions
+      });
+    } else {
+      setNewRx({ ...newRx, name: val });
+    }
   };
 
   const removeRx = (idx: number) => {
@@ -100,7 +154,7 @@ export default function DiagnosisManagement({ patient, onUpdatePatient }: Diagno
     <div id="diagnosis-management-component" className="space-y-8 pb-12">
       <div>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-          <Activity className="w-6 h-6 text-indigo-400" /> Diagnosis & Management
+          <Activity className="w-6 h-6 text-indigo-600 dark:text-indigo-400" /> Diagnosis & Management
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Formulate differentials, order investigations, and manage prescriptions.</p>
       </div>
@@ -110,7 +164,7 @@ export default function DiagnosisManagement({ patient, onUpdatePatient }: Diagno
       {/* Differential Diagnosis */}
       <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-          <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-2">
             <Activity className="w-4.5 h-4.5" /> Differential Diagnosis
           </h3>
           <button onClick={() => generateAI("diagnosis", "differentials")} disabled={patient.loading}
@@ -132,65 +186,122 @@ export default function DiagnosisManagement({ patient, onUpdatePatient }: Diagno
       {/* Investigations */}
       <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-          <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
             <FileText className="w-4.5 h-4.5" /> Investigations
           </h3>
-          <button onClick={() => generateAI("prescribedInvestigations", "investigations")} disabled={patient.loading}
-            className="inline-flex items-center gap-1.5 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition">
-            <Sparkles className={`w-3 h-3 ${patient.loading ? "animate-spin" : ""}`} /> {patient.loading ? "Generating..." : "AI Generate"}
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => dispatchOrders("lab")} className="inline-flex items-center gap-1.5 bg-sky-600/10 hover:bg-sky-600/20 text-sky-600 dark:text-sky-400 border border-sky-500/30 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition">
+              {dispatchStatus.lab === "loading" ? "Sending..." : dispatchStatus.lab === "success" ? "Sent ✓" : "Send to Lab"}
+            </button>
+            <button onClick={() => dispatchOrders("radiology")} className="inline-flex items-center gap-1.5 bg-fuchsia-600/10 hover:bg-fuchsia-600/20 text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-500/30 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition">
+              {dispatchStatus.radiology === "loading" ? "Sending..." : dispatchStatus.radiology === "success" ? "Sent ✓" : "Send to Radiology"}
+            </button>
+            <button onClick={() => generateAI("prescribedInvestigations", "investigations")} disabled={patient.loading}
+              className="inline-flex items-center gap-1.5 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition">
+              <Sparkles className={`w-3 h-3 ${patient.loading ? "animate-spin" : ""}`} /> {patient.loading ? "Generating..." : "AI Generate"}
+            </button>
+          </div>
         </div>
-        <SuggestionInput 
+        
+        <div className="flex bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl gap-1 border border-slate-200 dark:border-slate-800 mb-4">
+          <button onClick={() => setInvTab("hemato")} className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition ${invTab === "hemato" ? "bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>Hematological</button>
+          <button onClick={() => setInvTab("radio")} className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition ${invTab === "radio" ? "bg-white dark:bg-slate-800 text-fuchsia-600 dark:text-fuchsia-400 shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>Radiological</button>
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          {(invTab === "hemato" ? HEMATO_INV : RADIO_INV).map((inv) => (
+            <button key={inv} onClick={() => {
+              const current = patient.prescribedInvestigations ? patient.prescribedInvestigations + "\n" : "";
+              if (!current.includes(inv)) updateInvestigations(current + inv);
+            }} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-semibold transition">{inv}</button>
+          ))}
+        </div>
+        
+        <div className="flex gap-2 items-start">
+          <div className="flex-1">
+            <input 
+              type="text"
+              value={newInv} 
+              onChange={(e) => setNewInv(e.target.value)} 
+              placeholder="Type custom investigation..."
+              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition font-medium" 
+            />
+          </div>
+          <button onClick={() => {
+            if (!newInv.trim()) return;
+            const current = patient.prescribedInvestigations ? patient.prescribedInvestigations + "\n" : "";
+            updateInvestigations(current + newInv.trim());
+            setNewInv("");
+          }} className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-md transition whitespace-nowrap">Add</button>
+        </div>
+        
+        <textarea 
           value={patient.prescribedInvestigations || ""} 
-          onChange={updateInvestigations} 
-          textarea={true}
-          rows={5} 
-          placeholder="Order labs, imaging, and urgent bedside tests..."
-          suggestions={COMMON_INVESTIGATIONS}
-          className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/15 text-sm transition font-medium resize-y" 
+          onChange={(e) => updateInvestigations(e.target.value)}
+          rows={4} 
+          placeholder="Ordered investigations will appear here..."
+          className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition font-medium resize-y" 
         />
       </section>
 
       {/* Prescriptions */}
       <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xl space-y-6">
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-          <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
             <Pill className="w-4.5 h-4.5" /> Prescriptions
           </h3>
-          <button onClick={() => generateAI("managementPlan", "prescriptions")} disabled={patient.loading}
-            className="inline-flex items-center gap-1.5 bg-amber-600/10 hover:bg-amber-600/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition">
-            <Sparkles className={`w-3 h-3 ${patient.loading ? "animate-spin" : ""}`} /> {patient.loading ? "Suggest Drugs" : "AI Generate"}
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => dispatchOrders("pharmacy")} className="inline-flex items-center gap-1.5 bg-orange-600/10 hover:bg-orange-600/20 text-orange-600 dark:text-orange-400 border border-orange-500/30 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition">
+              {dispatchStatus.pharmacy === "loading" ? "Sending..." : dispatchStatus.pharmacy === "success" ? "Sent ✓" : "Send to Pharmacy"}
+            </button>
+            <button onClick={() => generateAI("managementPlan", "prescriptions")} disabled={patient.loading}
+              className="inline-flex items-center gap-1.5 bg-amber-600/10 hover:bg-amber-600/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition">
+              <Sparkles className={`w-3 h-3 ${patient.loading ? "animate-spin" : ""}`} /> {patient.loading ? "Suggest Drugs" : "AI Generate"}
+            </button>
+          </div>
         </div>
 
         {patient.managementPlan && (
-          <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-200/80 text-sm whitespace-pre-wrap font-mono leading-relaxed">
+          <div className="p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl text-amber-900 dark:text-amber-200/80 text-sm whitespace-pre-wrap font-mono leading-relaxed">
             {patient.managementPlan}
           </div>
         )}
 
         {/* New Prescription Form (Horizontal) */}
         <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-inner mb-6">
-          <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800/80 pb-3 mb-4">New Prescription</h4>
+          <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800/80 pb-3 mb-4">New Prescription</h4>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             <div className="flex flex-col gap-1.5 md:col-span-2">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-500">Drug Name</label>
-              <SuggestionInput value={newRx.name || ""} onChange={(val) => setNewRx({ ...newRx, name: val })} placeholder="e.g. Paracetamol" suggestions={COMMON_DRUGS} className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition" />
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Drug Name</label>
+              <SuggestionInput value={newRx.name || ""} onChange={handleDrugNameChange} placeholder="e.g. Paracetamol" suggestions={COMMON_DRUG_NAMES} className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition" />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-500">Dosage</label>
-              <input type="text" value={newRx.dosage || ""} onChange={(e) => setNewRx({ ...newRx, dosage: e.target.value })} placeholder="Custom dosage..." className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition" />
+            <div className="flex gap-2 md:col-span-1">
+              <div className="flex flex-col gap-1.5 w-1/2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Dosage</label>
+                <input type="text" value={newRx.dosage || ""} onChange={(e) => setNewRx({ ...newRx, dosage: e.target.value })} placeholder="500mg..." className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition" />
+              </div>
+              <div className="flex flex-col gap-1.5 w-1/2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Qty/Form</label>
+                <select value={rxQty} onChange={(e) => setRxQty(e.target.value)} className="w-full px-2 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 text-xs transition">
+                  <option value="0.5 Tab">0.5 Tab</option>
+                  <option value="1 Tab">1 Tab</option>
+                  <option value="2 Tabs">2 Tabs</option>
+                  <option value="5 ml">5 ml</option>
+                  <option value="10 ml">10 ml</option>
+                  <option value="1 Sachet">1 Sachet</option>
+                </select>
+              </div>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-500">Frequency</label>
+            <div className="flex flex-col gap-1.5 md:col-span-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Frequency</label>
               <SuggestionInput value={newRx.frequency || ""} onChange={(val) => setNewRx({ ...newRx, frequency: val })} placeholder="BD, TDS..." suggestions={FREQUENCIES} className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition" />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-500">Duration</label>
+            <div className="flex flex-col gap-1.5 md:col-span-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Duration</label>
               <SuggestionInput value={newRx.duration || ""} onChange={(val) => setNewRx({ ...newRx, duration: val })} placeholder="5 days..." suggestions={DURATIONS} className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition" />
             </div>
             <div className="flex flex-col gap-1.5 md:col-span-4">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-500">Instructions</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Instructions</label>
               <input type="text" value={newRx.instructions || ""} onChange={(e) => setNewRx({ ...newRx, instructions: e.target.value })} placeholder="e.g. After meals" className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition" />
             </div>
             <div className="md:col-span-1">
@@ -204,7 +315,7 @@ export default function DiagnosisManagement({ patient, onUpdatePatient }: Diagno
         {/* Added Prescriptions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {px.length === 0 ? (
-            <div className="md:col-span-2 lg:col-span-3 flex flex-col items-center justify-center text-slate-600 dark:text-slate-500 py-10 bg-slate-50/40 dark:bg-slate-950/40 rounded-xl border border-slate-200/50 dark:border-slate-800/50">
+            <div className="md:col-span-2 lg:col-span-3 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 py-10 bg-slate-50/40 dark:bg-slate-950/40 rounded-xl border border-slate-200/50 dark:border-slate-800/50">
               <Pill className="w-10 h-10 text-slate-300 dark:text-slate-700 mb-3" />
               <p className="text-sm font-medium">No active prescriptions.</p>
               <p className="text-xs mt-1">Use the entry form above to add drugs.</p>
@@ -212,19 +323,19 @@ export default function DiagnosisManagement({ patient, onUpdatePatient }: Diagno
           ) : (
             px.map((rx, idx) => (
               <div key={rx.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex gap-4 relative shadow-sm group items-start">
-                <div className="w-10 h-10 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold border border-indigo-500/25 shrink-0">
+                <div className="w-10 h-10 rounded-full bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold border border-indigo-500/25 shrink-0">
                   <Pill className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">{rx.name} <span className="text-indigo-400">{rx.dosage}</span></h4>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">{rx.name} <span className="text-indigo-600 dark:text-indigo-400">{rx.dosage}</span></h4>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider font-semibold">
                     {rx.frequency} • {rx.duration}
                   </p>
                   {rx.instructions && (
-                    <p className="text-xs text-slate-600 dark:text-slate-500 mt-1 bg-white dark:bg-slate-900 px-2 py-1 rounded inline-block border border-slate-200/60 dark:border-slate-800/60">{rx.instructions}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 bg-white dark:bg-slate-900 px-2 py-1 rounded inline-block border border-slate-200/60 dark:border-slate-800/60">{rx.instructions}</p>
                   )}
                 </div>
-                <button onClick={() => removeRx(idx)} className="p-1.5 text-slate-600 dark:text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition opacity-0 group-hover:opacity-100 shrink-0">
+                <button onClick={() => removeRx(idx)} className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10 rounded-md transition opacity-0 group-hover:opacity-100 shrink-0">
                   <X className="w-4 h-4" />
                 </button>
               </div>
