@@ -20,7 +20,12 @@ export default async function PrintCaseSheet({ params }: { params: Promise<{ id:
   }
 
   // Auto-fill defaults for printing
-  const getNormal = (val: string | undefined | null, defaultText = "None reported") => val && val.trim() !== "" ? val : defaultText;
+  const getNormal = (val: any, defaultText = "None reported") => {
+    if (!val) return defaultText;
+    if (typeof val === "string") return val.trim() !== "" ? val : defaultText;
+    if (Array.isArray(val)) return val.length > 0 ? val.join(", ") : defaultText;
+    return String(val);
+  };
   
   const vitals = data.vit || {};
   const sysReview = data.sys || {};

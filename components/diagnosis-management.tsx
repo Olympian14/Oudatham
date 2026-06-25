@@ -386,8 +386,6 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
         </div>
       </section>
 
-      </section>
-
       {/* Inpatient Drug Orders Section */}
       {patient.isAdmitted && (
         <section className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-800/50 rounded-xl p-4 sm:p-5 shadow-xl space-y-4">
