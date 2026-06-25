@@ -48,21 +48,24 @@ const DURATIONS = ["3 days", "5 days", "7 days", "14 days", "1 month", "Ongoing"
 export default function DiagnosisManagement({ patient, onUpdatePatient, encounterId }: DiagnosisManagementProps) {
   const [error, setError] = useState<string | null>(null);
 
-  // New Prescription State
-  const [newRx, setNewRx] = useState<Partial<PrescriptionItem>>({
-    name: "", dosage: "", frequency: "BD (Twice daily)", duration: "5 days", instructions: ""
-  });
+  const [newRx, setNewRx] = useState<Partial<PrescriptionItem>>({});
   const [rxQty, setRxQty] = useState("1 Tab");
+  const [newInpatientRx, setNewInpatientRx] = useState<Partial<PrescriptionItem>>({});
+  const [inpatientRxQty, setInpatientRxQty] = useState("1 Ampoule");
   const [newInv, setNewInv] = useState("");
   const [invTab, setInvTab] = useState<"hemato" | "radio">("hemato");
   const [dispatchStatus, setDispatchStatus] = useState<Record<string, "idle" | "loading" | "success" | "error">>({
-    pharmacy: "idle", lab: "idle", radiology: "idle"
+    pharmacy: "idle", lab: "idle", radiology: "idle", inpatient_pharmacy: "idle"
   });
 
-  const dispatchOrders = async (type: "pharmacy" | "lab" | "radiology") => {
+  const dispatchOrders = async (type: "pharmacy" | "lab" | "radiology" | "inpatient_pharmacy") => {
     setDispatchStatus({ ...dispatchStatus, [type]: "loading" });
     try {
-      const payload = type === "pharmacy" ? patient.prescriptions : patient.prescribedInvestigations;
+      let payload;
+      if (type === "pharmacy") payload = patient.prescriptions || [];
+      else if (type === "inpatient_pharmacy") payload = patient.inpatientPrescriptions || [];
+      else payload = patient.prescribedInvestigations || "";
+      
       const res = await fetch(`/api/doctor/encounter/${encounterId}/dispatch`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -72,13 +75,46 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
       setDispatchStatus({ ...dispatchStatus, [type]: "success" });
       setTimeout(() => setDispatchStatus(prev => ({ ...prev, [type]: "idle" })), 3000);
     } catch (e) {
-      setDispatchStatus({ ...dispatchStatus, [type]: "error" });
+      setDispatchStatus(prev => ({ ...prev, [type]: "error" }));
       setTimeout(() => setDispatchStatus(prev => ({ ...prev, [type]: "idle" })), 3000);
     }
   };
 
   const updateDiagnosis = (val: string) => onUpdatePatient({ ...patient, status: "in-progress", diagnosis: val });
   const updateInvestigations = (val: string) => onUpdatePatient({ ...patient, status: "in-progress", prescribedInvestigations: val });
+  const toggleAdmit = () => onUpdatePatient({ ...patient, isAdmitted: !patient.isAdmitted });
+
+  const handleDrugNameChange = (val: string) => {
+    const match = SMART_DRUGS.find(d => d.name.toLowerCase() === val.toLowerCase());
+    if (match) {
+      setNewRx({
+        ...newRx,
+        name: match.name,
+        dosage: match.dosage,
+        frequency: match.defaultFreq,
+        duration: match.defaultDuration,
+        instructions: match.instructions
+      });
+    } else {
+      setNewRx({ ...newRx, name: val });
+    }
+  };
+
+  const handleInpatientDrugNameChange = (val: string) => {
+    const match = SMART_DRUGS.find(d => d.name.toLowerCase() === val.toLowerCase());
+    if (match) {
+      setNewInpatientRx({
+        ...newInpatientRx,
+        name: match.name,
+        dosage: match.dosage,
+        frequency: match.defaultFreq,
+        duration: match.defaultDuration,
+        instructions: match.instructions
+      });
+    } else {
+      setNewInpatientRx({ ...newInpatientRx, name: val });
+    }
+  };
 
   const generateAI = async (field: "diagnosis" | "prescribedInvestigations" | "managementPlan", promptType: string) => {
     setError(null);
@@ -110,33 +146,17 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
   const addPrescription = () => {
     if (!newRx.name) return;
     const rx: PrescriptionItem = { 
-      id: Date.now().toString(), 
-      name: newRx.name || "", 
-      dosage: newRx.dosage ? `${newRx.dosage} (${rxQty})` : rxQty, 
-      frequency: newRx.frequency || "", 
-      duration: newRx.duration || "", 
-      route: "", 
+      id: crypto.randomUUID(), 
+      name: newRx.name, 
+      dosage: newRx.dosage || rxQty, 
+      frequency: newRx.frequency || "OD", 
+      duration: newRx.duration || "1 day", 
+      route: "Oral", 
       instructions: newRx.instructions || "" 
     };
     onUpdatePatient({ ...patient, status: "in-progress", prescriptions: [...(patient.prescriptions || []), rx] });
-    setNewRx({ name: "", dosage: "", frequency: "BD (Twice daily)", duration: "5 days", instructions: "" });
+    setNewRx({});
     setRxQty("1 Tab");
-  };
-
-  const handleDrugNameChange = (val: string) => {
-    const match = SMART_DRUGS.find(d => d.name.toLowerCase() === val.toLowerCase());
-    if (match) {
-      setNewRx({
-        ...newRx,
-        name: match.name,
-        dosage: match.dosage,
-        frequency: match.defaultFreq,
-        duration: match.defaultDuration,
-        instructions: match.instructions
-      });
-    } else {
-      setNewRx({ ...newRx, name: val });
-    }
   };
 
   const removeRx = (idx: number) => {
@@ -144,11 +164,33 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
     onUpdatePatient({ ...patient, status: "in-progress", prescriptions: arr });
   };
 
-  const markComplete = () => {
-    onUpdatePatient({ ...patient, status: "complete" });
+  const addInpatientPrescription = () => {
+    if (!newInpatientRx.name) return;
+    const px: PrescriptionItem = { id: crypto.randomUUID(), name: newInpatientRx.name, dosage: newInpatientRx.dosage || inpatientRxQty, frequency: newInpatientRx.frequency || "Stat", duration: newInpatientRx.duration || "1 dose", instructions: newInpatientRx.instructions || "", route: "IV" };
+    onUpdatePatient({ ...patient, inpatientPrescriptions: [...(patient.inpatientPrescriptions || []), px] });
+    setNewInpatientRx({});
+    setInpatientRxQty("1 Ampoule");
+  };
+
+  const removeInpatientRx = (idx: number) => {
+    const arr = (patient.inpatientPrescriptions || []).filter((_, i) => i !== idx);
+    onUpdatePatient({ ...patient, inpatientPrescriptions: arr });
+  };
+
+  const markComplete = async () => {
+    const res = await fetch(`/api/doctor/encounter/${encounterId}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: patient.isAdmitted ? "ADMITTED" : "COMPLETED" })
+    });
+    if (res.ok) {
+      onUpdatePatient({ ...patient, status: "complete" });
+      window.location.href = "/doctor/queue";
+    }
   };
 
   const px = patient.prescriptions || [];
+  const ipx = patient.inpatientPrescriptions || [];
 
   return (
     <div id="diagnosis-management-component" className="space-y-4 pb-12">
@@ -344,10 +386,103 @@ export default function DiagnosisManagement({ patient, onUpdatePatient, encounte
         </div>
       </section>
 
+      </section>
+
+      {/* Inpatient Drug Orders Section */}
+      {patient.isAdmitted && (
+        <section className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-800/50 rounded-xl p-4 sm:p-5 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-rose-200 dark:border-rose-800/50 pb-3">
+            <h3 className="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-2">
+              <Activity className="w-4.5 h-4.5" /> Inpatient Drug Orders (Ward Chart)
+            </h3>
+            <button onClick={() => dispatchOrders("inpatient_pharmacy")} className="inline-flex items-center gap-1.5 bg-rose-600/10 hover:bg-rose-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition">
+              {dispatchStatus.inpatient_pharmacy === "loading" ? "Sending..." : dispatchStatus.inpatient_pharmacy === "success" ? "Sent ✓" : "Send to IP Pharmacy"}
+            </button>
+          </div>
+
+          <div className="bg-white dark:bg-slate-950 border border-rose-200/50 dark:border-rose-800/50 rounded-xl p-4 shadow-inner mb-6">
+            <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800/80 pb-3 mb-4">New Inpatient Order</h4>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+              <div className="flex flex-col gap-1.5 md:col-span-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Drug Name</label>
+                <SuggestionInput value={newInpatientRx.name || ""} onChange={handleInpatientDrugNameChange} placeholder="e.g. Ceftriaxone" suggestions={COMMON_DRUG_NAMES} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-rose-500 text-sm transition" />
+              </div>
+              <div className="flex gap-2 md:col-span-1">
+                <div className="flex flex-col gap-1.5 w-1/2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Dosage</label>
+                  <input type="text" value={newInpatientRx.dosage || ""} onChange={(e) => setNewInpatientRx({ ...newInpatientRx, dosage: e.target.value })} placeholder="1g..." className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-rose-500 text-sm transition" />
+                </div>
+                <div className="flex flex-col gap-1.5 w-1/2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Qty/Form</label>
+                  <select value={inpatientRxQty} onChange={(e) => setInpatientRxQty(e.target.value)} className="w-full px-2 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-rose-500 text-xs transition">
+                    <option value="1 Ampoule">1 Ampoule</option>
+                    <option value="1 Vial">1 Vial</option>
+                    <option value="1 Pint">1 Pint</option>
+                    <option value="1 Tab">1 Tab</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5 md:col-span-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Frequency</label>
+                <SuggestionInput value={newInpatientRx.frequency || ""} onChange={(val) => setNewInpatientRx({ ...newInpatientRx, frequency: val })} placeholder="Stat, BD..." suggestions={["Stat", "OD", "BD", "TDS", "QID", "SOS"]} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-rose-500 text-sm transition" />
+              </div>
+              <div className="flex flex-col gap-1.5 md:col-span-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Duration</label>
+                <SuggestionInput value={newInpatientRx.duration || ""} onChange={(val) => setNewInpatientRx({ ...newInpatientRx, duration: val })} placeholder="1 dose..." suggestions={["1 dose", "1 day", "3 days", "Until discharge"]} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-rose-500 text-sm transition" />
+              </div>
+              <div className="flex flex-col gap-1.5 md:col-span-4">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Instructions / Route</label>
+                <input type="text" value={newInpatientRx.instructions || ""} onChange={(e) => setNewInpatientRx({ ...newInpatientRx, instructions: e.target.value })} placeholder="e.g. Slow IV push" className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-rose-500 text-sm transition" />
+              </div>
+              <div className="md:col-span-1">
+                <button onClick={addInpatientPrescription} disabled={!newInpatientRx.name} className="w-full flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white disabled:text-slate-400 dark:disabled:text-slate-600 font-bold py-2 rounded-lg shadow-md transition text-sm border border-transparent disabled:border-slate-300 dark:disabled:border-slate-700">
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Added Inpatient Prescriptions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {ipx.length === 0 ? (
+              <div className="md:col-span-2 lg:col-span-3 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 py-6 bg-white/50 dark:bg-slate-950/40 rounded-xl border border-rose-200/50 dark:border-rose-800/50">
+                <p className="text-sm font-medium">No inpatient orders.</p>
+              </div>
+            ) : (
+              ipx.map((rx, idx) => (
+                <div key={rx.id} className="bg-white dark:bg-slate-950 border border-rose-200/50 dark:border-rose-800/50 rounded-xl p-4 flex gap-4 relative shadow-sm group items-start">
+                  <div className="w-10 h-10 rounded-full bg-rose-600/20 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold border border-rose-500/25 shrink-0">
+                    <Activity className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">{rx.name} <span className="text-rose-600 dark:text-rose-400">{rx.dosage}</span></h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider font-semibold">
+                      {rx.frequency} • {rx.duration}
+                    </p>
+                    {rx.instructions && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded inline-block border border-slate-200/60 dark:border-slate-800/60">{rx.instructions}</p>
+                    )}
+                  </div>
+                  <button onClick={() => removeInpatientRx(idx)} className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10 rounded-md transition opacity-0 group-hover:opacity-100 shrink-0">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+      )}
+
       {/* Completion */}
-      <div className="flex justify-end pt-4">
+      <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pt-4">
+        <button onClick={toggleAdmit}
+          className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold transition ${patient.isAdmitted ? "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700 shadow-inner" : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm"}`}>
+          <Activity className="w-5 h-5" />
+          {patient.isAdmitted ? "Admitted (Inpatient)" : "Admit Patient"}
+        </button>
+
         <button onClick={markComplete} disabled={patient.status === "complete"}
-          className={`inline-flex items-center gap-2 py-3 px-6 rounded-xl font-bold shadow-lg transition ${patient.status === "complete" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40"}`}>
+          className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold shadow-lg transition ${patient.status === "complete" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40"}`}>
           <CheckCircle2 className="w-5 h-5" />
           {patient.status === "complete" ? "Encounter Finalized" : "Complete Encounter"}
         </button>

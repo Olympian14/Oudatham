@@ -11,10 +11,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const { id } = await params;
 
-    // 1. Mark as completed
+    const body = await req.json().catch(() => ({}));
+    const newStatus = body.status === "ADMITTED" ? "ADMITTED" : "COMPLETED";
+
+    // 1. Mark as completed or admitted
     await prisma.encounter.update({
       where: { id },
-      data: { status: "COMPLETED" }
+      data: { status: newStatus }
     });
 
     // 2. Normalize JSON Data to Database tables

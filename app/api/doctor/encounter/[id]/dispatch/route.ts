@@ -16,7 +16,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (type === "pharmacy") {
       // payload is prescriptions array
       await prisma.prescription.deleteMany({
-        where: { encounterId: id, status: "PENDING" }
+        where: { encounterId: id, status: "PENDING", type: "OUTPATIENT" }
       });
       if (payload && payload.length > 0) {
         await prisma.prescription.createMany({
@@ -29,6 +29,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
             instructions: p.instructions,
             route: p.route || "Oral",
             status: "PENDING"
+          }))
+        });
+      }
+    } else if (type === "inpatient_pharmacy") {
+      // payload is prescriptions array
+      await prisma.prescription.deleteMany({
+        where: { encounterId: id, status: "PENDING", type: "INPATIENT" }
+      });
+      if (payload && payload.length > 0) {
+        await prisma.prescription.createMany({
+          data: payload.map((p: any) => ({
+            encounterId: id,
+            drugName: p.name,
+            dose: p.dosage,
+            frequency: p.frequency,
+            duration: p.duration,
+            instructions: p.instructions,
+            route: p.route || "Oral",
+            status: "PENDING",
+            type: "INPATIENT"
           }))
         });
       }

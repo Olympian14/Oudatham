@@ -15,13 +15,25 @@ export default async function DoctorQueue({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const activeDept = params.dept || DEPARTMENTS[0];
 
-  const encounters = await prisma.encounter.findMany({
-    where: {
-      department: activeDept,
-      status: { in: ["WAITING", "IN_CONSULTATION"] }
-    },
+  const statusFilter = params.status || "WAITING"; // WAITING handles both WAITING and IN_CONSULTATION by default for the "Waiting" tab
+
+  const allEncounters = await prisma.encounter.findMany({
+    where: { department: activeDept },
     include: { patient: true },
     orderBy: { createdAt: "asc" }
+  });
+
+  const stats = {
+    total: allEncounters.length,
+    waiting: allEncounters.filter(e => e.status === "WAITING" || e.status === "IN_CONSULTATION").length,
+    admitted: allEncounters.filter(e => e.status === "ADMITTED").length,
+    seen: allEncounters.filter(e => e.status === "COMPLETED").length,
+  };
+
+  const encounters = allEncounters.filter(e => {
+    if (statusFilter === "TOTAL") return true;
+    if (statusFilter === "WAITING") return e.status === "WAITING" || e.status === "IN_CONSULTATION";
+    return e.status === statusFilter;
   });
 
   return (
@@ -55,12 +67,36 @@ export default async function DoctorQueue({ searchParams }: { searchParams: Prom
           ))}
         </div>
 
-        <div className="flex items-center justify-between">
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <a href={`/doctor/queue?dept=${encodeURIComponent(activeDept)}&status=TOTAL`}
+             className={`p-4 rounded-2xl border transition shadow-sm flex flex-col ${statusFilter === "TOTAL" ? "bg-slate-800 text-white border-slate-700" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"}`}>
+            <span className={`text-xs font-bold uppercase tracking-wider mb-1 ${statusFilter === "TOTAL" ? "text-slate-400" : "text-slate-500"}`}>Total Patients</span>
+            <span className="text-3xl font-extrabold">{stats.total}</span>
+          </a>
+          <a href={`/doctor/queue?dept=${encodeURIComponent(activeDept)}&status=WAITING`}
+             className={`p-4 rounded-2xl border transition shadow-sm flex flex-col ${statusFilter === "WAITING" ? "bg-amber-600 text-white border-amber-500" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-500/50"}`}>
+            <span className={`text-xs font-bold uppercase tracking-wider mb-1 ${statusFilter === "WAITING" ? "text-amber-200" : "text-amber-600 dark:text-amber-500"}`}>Waiting</span>
+            <span className="text-3xl font-extrabold">{stats.waiting}</span>
+          </a>
+          <a href={`/doctor/queue?dept=${encodeURIComponent(activeDept)}&status=ADMITTED`}
+             className={`p-4 rounded-2xl border transition shadow-sm flex flex-col ${statusFilter === "ADMITTED" ? "bg-rose-600 text-white border-rose-500" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-500/50"}`}>
+            <span className={`text-xs font-bold uppercase tracking-wider mb-1 ${statusFilter === "ADMITTED" ? "text-rose-200" : "text-rose-600 dark:text-rose-500"}`}>Admitted</span>
+            <span className="text-3xl font-extrabold">{stats.admitted}</span>
+          </a>
+          <a href={`/doctor/queue?dept=${encodeURIComponent(activeDept)}&status=COMPLETED`}
+             className={`p-4 rounded-2xl border transition shadow-sm flex flex-col ${statusFilter === "COMPLETED" ? "bg-emerald-600 text-white border-emerald-500" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-500/50"}`}>
+            <span className={`text-xs font-bold uppercase tracking-wider mb-1 ${statusFilter === "COMPLETED" ? "text-emerald-200" : "text-emerald-600 dark:text-emerald-500"}`}>Seen</span>
+            <span className="text-3xl font-extrabold">{stats.seen}</span>
+          </a>
+        </div>
+
+        <div className="flex items-center justify-between mt-8">
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Users className="w-6 h-6 text-indigo-600 dark:text-indigo-400" /> {activeDept} Queue
           </h2>
           <div className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-sm font-bold border border-indigo-200 dark:border-indigo-500/20">
-            {encounters.length} Waiting
+            {encounters.length} {statusFilter === "TOTAL" ? "Total" : statusFilter.replace("_", " ")}
           </div>
         </div>
 
@@ -108,6 +144,8 @@ export default async function DoctorQueue({ searchParams }: { searchParams: Prom
                           className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition text-sm">
                           {enc.status === "WAITING" ? (
                             <><PlayCircle className="w-4 h-4" /> Start</>
+                          ) : enc.status === "COMPLETED" || enc.status === "ADMITTED" ? (
+                            <><Stethoscope className="w-4 h-4" /> View</>
                           ) : (
                             <><Stethoscope className="w-4 h-4" /> Resume</>
                           )}

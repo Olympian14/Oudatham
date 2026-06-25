@@ -133,6 +133,8 @@ export interface Patient {
   prescribedInvestigations?: string;
   managementPlan?: string;
   prescriptions?: PrescriptionItem[];
+  inpatientPrescriptions?: PrescriptionItem[];
+  isAdmitted?: boolean;
 }
 
 export interface Step {

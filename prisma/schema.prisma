@@ -81,6 +81,7 @@ model Prescription {
   duration     String
   instructions String?
   status       String    @default("PENDING")
+  type         String    @default("OUTPATIENT")
 }
 
 model ImagingOrder {

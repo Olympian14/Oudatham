@@ -138,6 +138,9 @@ export default function EncounterShell({ encounterId, initialData }: { encounter
             <span className={`text-[10px] font-bold uppercase tracking-wider ${saving ? "text-amber-500 animate-pulse" : "text-slate-500 dark:text-slate-500"}`}>
               {saving ? "Saving..." : "Saved"}
             </span>
+            <a href={`/doctor/encounter/${encounterId}/print`} target="_blank" rel="noreferrer" className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+              Print Case Sheet
+            </a>
             <button onClick={completeEncounter} className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" /> Complete Visit
             </button>
