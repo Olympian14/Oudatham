@@ -23,7 +23,8 @@ export default async function PrintCaseSheet({ params }: { params: Promise<{ id:
   const getNormal = (val: any, defaultText = "None reported") => {
     if (!val) return defaultText;
     if (typeof val === "string") return val.trim() !== "" ? val : defaultText;
-    if (Array.isArray(val)) return val.length > 0 ? val.join(", ") : defaultText;
+    if (Array.isArray(val)) return val.length > 0 ? val.map(v => typeof v === 'object' ? (v.text || v.name || JSON.stringify(v)) : v).join(", ") : defaultText;
+    if (typeof val === "object" && Object.keys(val).length > 0) return JSON.stringify(val);
     return String(val);
   };
   

@@ -114,6 +114,28 @@ export default function DischargeClient({ encounterId, initialPatientData, patie
             <h3 className="text-sm font-bold text-indigo-600 uppercase border-b border-slate-200 pb-1 mb-2">Chief Complaints</h3>
             <p className="text-slate-800">{getNormal(patient.cc)}</p>
           </div>
+          <div>
+            <h3 className="text-sm font-bold text-indigo-600 uppercase border-b border-slate-200 pb-1 mb-2">Investigations Done</h3>
+            <div className="text-slate-800 text-sm space-y-1">
+              <p><strong>Laboratory:</strong> {patient.labInvestigations?.length ? patient.labInvestigations.map((i: any) => i.name).join(", ") : "None"}</p>
+              <p><strong>Radiology:</strong> {patient.radiologyInvestigations?.length ? patient.radiologyInvestigations.map((i: any) => i.name).join(", ") : "None"}</p>
+              {patient.prescribedInvestigations && <p><strong>Other:</strong> {patient.prescribedInvestigations}</p>}
+            </div>
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-indigo-600 uppercase border-b border-slate-200 pb-1 mb-2">Medications Given in Hospital</h3>
+            <div className="text-slate-800 text-sm space-y-1">
+              {patient.inpatientPrescriptions?.length ? (
+                <ul className="list-disc pl-5">
+                  {patient.inpatientPrescriptions.map((rx: any, idx: number) => (
+                    <li key={idx}><strong>{rx.name}</strong> - {rx.dosage} {rx.frequency} ({rx.route || "IV"}) {rx.instructions ? ` - ${rx.instructions}` : ""}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>None documented.</p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Course in Hospital */}
