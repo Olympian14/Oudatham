@@ -101,7 +101,7 @@ export interface Patient {
   status: "new" | "in-progress" | "complete";
   demo: Demographic;
   cc: Complaint[];
-  hxPhase: "hpi" | "sysHx";
+  hxPhase: "hpi" | "sysHx" | "trends";
   hpiOpen: Record<number, boolean>;
   hpiData: Record<number, Record<string, string | string[]>>;
   customHpi: Record<number, string>;

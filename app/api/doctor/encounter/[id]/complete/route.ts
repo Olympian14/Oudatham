@@ -11,8 +11,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const { id } = await params;
 
+    // 2. Normalize JSON Data to Database tables
+    const caseSheet = await prisma.caseSheet.findUnique({ where: { encounterId: id } });
+    let isAdmitted = false;
+    let data: any = {};
+    if (caseSheet && caseSheet.jsonData) {
+      data = JSON.parse(caseSheet.jsonData as string);
+      isAdmitted = !!data.isAdmitted;
+    }
+
     const body = await req.json().catch(() => ({}));
-    const newStatus = body.status === "ADMITTED" ? "ADMITTED" : "COMPLETED";
+    const newStatus = (body.status === "ADMITTED" || isAdmitted) ? "ADMITTED" : "COMPLETED";
 
     // 1. Mark as completed or admitted
     await prisma.encounter.update({
@@ -20,10 +29,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       data: { status: newStatus }
     });
 
-    // 2. Normalize JSON Data to Database tables
-    const caseSheet = await prisma.caseSheet.findUnique({ where: { encounterId: id } });
     if (caseSheet && caseSheet.jsonData) {
-      const data = JSON.parse(caseSheet.jsonData as string);
       
       // Save Prescriptions (status defaults to PENDING for pharmacy)
       if (data.prescriptions && Array.isArray(data.prescriptions)) {

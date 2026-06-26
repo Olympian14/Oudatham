@@ -49,6 +49,21 @@ model Encounter {
   investigations Investigation[]
   prescriptions  Prescription[]
   imagingOrders  ImagingOrder[]
+  progressNotes  ProgressNote[]
+}
+
+model ProgressNote {
+  id             String    @id @default(uuid())
+  encounterId    String
+  encounter      Encounter @relation(fields: [encounterId], references: [id])
+  date           DateTime  @default(now())
+  subjective     String?
+  objective      String?
+  assessment     String?
+  plan           String?
+  vitals         String?
+  investigations String?
+  createdAt      DateTime  @default(now())
 }
 
 model CaseSheet {

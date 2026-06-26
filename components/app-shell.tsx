@@ -153,7 +153,7 @@ export default function AppShell() {
       case 3: return <History patient={p} onUpdatePatient={updatePatient} />;
       case 4: return <Background patient={p} onUpdatePatient={updatePatient} />;
       case 5: return <Examination patient={p} onUpdatePatient={updatePatient} />;
-      case 6: return <DiagnosisManagement patient={p} onUpdatePatient={updatePatient} />;
+      case 6: return <DiagnosisManagement patient={p} onUpdatePatient={updatePatient} encounterId="mock-id" onComplete={() => {}} />;
       default: return <Overview patients={patients} currentIdx={currentIdx} onSelect={(idx) => { setCurrentIdx(idx); setStep(1); }} onNew={newPatient} onDelete={deletePatient} />;
     }
   };

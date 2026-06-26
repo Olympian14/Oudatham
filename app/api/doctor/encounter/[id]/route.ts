@@ -19,6 +19,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       create: { encounterId: id, jsonData: JSON.stringify(data) }
     });
 
+    const encounter = await prisma.encounter.findUnique({ where: { id } });
+    if (encounter) {
+      if (data.isAdmitted && encounter.status !== "ADMITTED") {
+        await prisma.encounter.update({ where: { id }, data: { status: "ADMITTED" } });
+      } else if (!data.isAdmitted && encounter.status === "ADMITTED") {
+        await prisma.encounter.update({ where: { id }, data: { status: "IN_CONSULTATION" } });
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to save case sheet", error);
